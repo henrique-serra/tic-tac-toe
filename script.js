@@ -67,24 +67,35 @@ function GameController(
     }
 
     const verticalWin = (column) => {
+        
         const verticalMarkers = [];
         for (row of board.getBoard()) {
             verticalMarkers.push(row[column].getValue());
         }
+        
         const uniqueMarkers = new Set(verticalMarkers);
+       
         return uniqueMarkers.size == 1 ? true : false;
     }
 
     const horizontalWin = (row) => {
+        const horizontalMarkers = [];
+        for (column of board.getBoard()[row]) {
+            horizontalMarkers.push(column.getValue());
+        }
 
+        const uniqueMarkers = new Set(horizontalMarkers);
+
+        return uniqueMarkers.size == 1 ? true : false;
     }
 
     const diagonalWin = () => {
-        
+
     }
 
-    const win = () => {
-
+    const win = (row, column) => {
+        if (verticalWin(column)) return true;
+        if (horizontalWin(row)) return true;
     }
 
     const draw = () => {
@@ -109,12 +120,14 @@ function GameController(
 
         board.markCell(activePlayer, row, column);
         board.printBoard();
+        // for testing purpose, remove later
+        console.log(win(row, column));
         switchPlayers();
     }
 
     return {
         playRound,
         getActivePlayer,
-        verticalWin
+        win
     }
 }
