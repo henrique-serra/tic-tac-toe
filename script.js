@@ -51,7 +51,7 @@ function Player(name, marker) {
     }
 }
 
-function GameController(
+const game = function GameController(
     player1 = Player("Player 1", "O"),
     player2 = Player("Player 2", "X")
 ) {
@@ -90,16 +90,55 @@ function GameController(
     }
 
     const diagonalWin = () => {
+        const boardCopy = board.getBoard();
+        // ADD an array for each diagonal combination. There will be two arrays inside diagonalMarkers array: left-right and right-left
+        const leftToRightDiagonalMarkers = [];
+        const rightToLefttDiagonalMarkers = [];
 
+        let columnForLeftToRight = 0;
+        let columnForRightToLeft = boardCopy[0].length - 1;
+        // ADD cell values values to the arrays
+        for (row of boardCopy) {
+            leftToRightDiagonalMarkers.push(row[columnForLeftToRight].getValue());
+            rightToLefttDiagonalMarkers.push(row[columnForRightToLeft].getValue());
+            columnForLeftToRight++;
+            columnForRightToLeft--;
+        }
+
+        // CONVERT to set each array
+        const uniqueMarkersLefToRight = new Set(leftToRightDiagonalMarkers);
+        const uniqueMarkersRightToLeft = new Set(rightToLefttDiagonalMarkers);
+
+        // IF any of the inner array has only one kind of marker, then win
+        if (uniqueMarkersLefToRight.size == 1 && !uniqueMarkersLefToRight.has(null)) return true;
+        if (uniqueMarkersRightToLeft.size == 1 && !uniqueMarkersRightToLeft.has(null)) return true;
+        
+        return false;
     }
 
     const win = (row, column) => {
         if (verticalWin(column)) return true;
         if (horizontalWin(row)) return true;
+        if (diagonalWin()) return true;
+        return false;
     }
 
-    const draw = () => {
+    const draw = (row, column) => {
+        const boardCopy = board.getBoard();
+        let cells = [];
 
+        for (r of boardCopy) {
+            for (c of r) {
+                cells.push(c.getValue());
+            }
+        }
+
+        cells = cells.flat();
+        const cellsSet = new Set(cells);
+
+        if (!win(row, column) && !cellsSet.has(null)) return true;
+
+        return false;
     }
 
     const playRound = () => {
@@ -120,14 +159,23 @@ function GameController(
 
         board.markCell(activePlayer, row, column);
         board.printBoard();
-        // for testing purpose, remove later
-        console.log(win(row, column));
+        
+        if (win(row, column)) {
+            console.log(`${activePlayer.name} has won!`);
+        }
+
+        if (draw(row, column)) {
+            console.log("It's a draw!");
+        }
+
         switchPlayers();
     }
 
     return {
         playRound,
         getActivePlayer,
+        diagonalWin,
+        draw,
         win
     }
-}
+}();
