@@ -1,34 +1,42 @@
-function Gameboard() {
+const gameboard = function() {
     const rows = 3;
     const columns = 3;
-    const board = [];
 
     // Set initial board
-    for (let i = 0; i < rows; i++) {
-        board[i] = [];
-        for (let j = 0; j < columns; j++) {
-            board[i].push(Cell());
+    const setInitialBoard = () => {
+        const board = [];
+        for (let i = 0; i < rows; i++) {
+            board[i] = [];
+            for (let j = 0; j < columns; j++) {
+                board[i].push(Cell());
+            }
         }
+        return board;
     }
 
+    const board = setInitialBoard();
+
+    // INVESTIGATE HOW TO ACCESS BOARD FROM setInitialBoard!!!
     const getBoard = () => board;
 
-    const printBoard = () => {
+    const printBoard = (board) => {
         const boardWithCellValues = board.map(row => row.map(cell => cell.getValue()));
         console.table(boardWithCellValues);
+        return boardWithCellValues;
     }
 
-    const markCell = (player, row, column) => {
+    const markCell = (player, row, column, board) => {
         const cell = board[row][column];
         cell.updateCellValue(player);
     }
 
     return {
+        setInitialBoard,
         getBoard,
         printBoard,
         markCell
     }
-}
+}();
 
 function Cell() {
     let value = null;
@@ -44,21 +52,22 @@ function Cell() {
     };
 }
 
-function Player(name, marker) {
+function Player(name, marker, victories = 0) {
     return {
         name,
-        marker
+        marker,
+        victories
     }
 }
 
-const game = function GameController(
+function GameController(
     player1 = Player("Player 1", "O"),
     player2 = Player("Player 2", "X")
 ) {
     
     let activePlayer = player1;
 
-    const board = Gameboard();
+    const board = gameboard.setInitialBoard();
 
     const getActivePlayer = () => activePlayer;
 
@@ -69,7 +78,7 @@ const game = function GameController(
     const verticalWin = (column) => {
         
         const verticalMarkers = [];
-        for (row of board.getBoard()) {
+        for (row of board.getBoard(board)) {
             verticalMarkers.push(row[column].getValue());
         }
         
@@ -80,7 +89,7 @@ const game = function GameController(
 
     const horizontalWin = (row) => {
         const horizontalMarkers = [];
-        for (column of board.getBoard()[row]) {
+        for (column of board.getBoard(board)[row]) {
             horizontalMarkers.push(column.getValue());
         }
 
@@ -90,7 +99,7 @@ const game = function GameController(
     }
 
     const diagonalWin = () => {
-        const boardCopy = board.getBoard();
+        const boardCopy = board.getBoard(board);
         // ADD an array for each diagonal combination. There will be two arrays inside diagonalMarkers array: left-right and right-left
         const leftToRightDiagonalMarkers = [];
         const rightToLefttDiagonalMarkers = [];
@@ -117,14 +126,17 @@ const game = function GameController(
     }
 
     const win = (row, column) => {
-        if (verticalWin(column)) return true;
-        if (horizontalWin(row)) return true;
-        if (diagonalWin()) return true;
+        if (verticalWin(column) || horizontalWin(row) || diagonalWin()) {
+            if (activePlayer === player1) player1.victories++;
+            if (activePlayer === player2) player2.victories++;
+            return true;
+        }
+
         return false;
     }
 
     const draw = (row, column) => {
-        const boardCopy = board.getBoard();
+        const boardCopy = board.getBoard(board);
         let cells = [];
 
         for (r of boardCopy) {
@@ -136,46 +148,75 @@ const game = function GameController(
         cells = cells.flat();
         const cellsSet = new Set(cells);
 
-        if (!win(row, column) && !cellsSet.has(null)) return true;
+        if (!win(row, column) && !cellsSet.has(null)) {
+            return true;
+        }
 
         return false;
     }
 
-    const playRound = () => {
-        let [row, column] = prompt("row, column").split(",");
-        
-        if (row > 2 || column > 2) {
-            alert("Off the limits!");
-            return;
-        }
+    let stopGame = false;
+    const playRound = (row = prompt("row"), column = prompt("column")) => {
 
-        const cell = board.getBoard()[row][column];
-        
-        if (cell.getValue()) {
-            alert("Cell taken! Choose another");
-            return;
-        }
+        if (stopGame) return;
+        const cell = board.getBoard(board)[row][column];
 
-
-        board.markCell(activePlayer, row, column);
-        board.printBoard();
+        board.markCell(activePlayer, row, column, board);
+        board.printBoard(board);
         
         if (win(row, column)) {
             console.log(`${activePlayer.name} has won!`);
+            switchPlayers();
+            stopGame = true;
         }
 
         if (draw(row, column)) {
             console.log("It's a draw!");
+            switchPlayers();
+            stopGame = true;
         }
 
         switchPlayers();
+
+        return stopGame;
     }
 
     return {
         playRound,
-        getActivePlayer,
-        diagonalWin,
-        draw,
-        win
+        getActivePlayer
     }
-}();
+}
+
+function ScreenController() {
+    const container = document.querySelector("#container");
+    const cells = document.querySelectorAll(".cell");
+    const boardCells = gameboard.printBoard();
+
+    const showBoardCells = () => {
+        cells.forEach( cell => {
+            const cellRowIndex = cell.parentNode.dataset.row;
+            const cellColumnIndex = cell.dataset.column;
+            cell.textContent = boardCells[cellRowIndex][cellColumnIndex];
+        })
+    }
+
+    container.addEventListener("click", e => {
+        const rowClickedIndex = e.target.parentNode.dataset.row;
+        const rowClicked = document.querySelector(`[data-row="${rowClickedIndex}"]`);
+        const columnClickedIndex = e.target.dataset.column;
+        const cellClicked = rowClicked.querySelector(`[data-column="${columnClickedIndex}"]`);
+
+        if (cellClicked.textContent) {
+            alert("Cell taken! Choose another!");
+            return;
+        }
+
+        game.playRound(rowClickedIndex, columnClickedIndex);
+        showBoardCells();
+        
+    })
+}
+
+function game() {
+
+}
