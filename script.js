@@ -1,43 +1,3 @@
-const gameboard = function() {
-    const rows = 3;
-    const columns = 3;
-
-    // Set initial board
-    const setInitialBoard = () => {
-        const board = [];
-        for (let i = 0; i < rows; i++) {
-            board[i] = [];
-            for (let j = 0; j < columns; j++) {
-                board[i].push(Cell());
-            }
-        }
-        return board;
-    }
-
-    const board = setInitialBoard();
-
-    // INVESTIGATE HOW TO ACCESS BOARD FROM setInitialBoard!!!
-    const getBoard = () => board;
-
-    const printBoard = (board) => {
-        const boardWithCellValues = board.map(row => row.map(cell => cell.getValue()));
-        console.table(boardWithCellValues);
-        return boardWithCellValues;
-    }
-
-    const markCell = (player, row, column, board) => {
-        const cell = board[row][column];
-        cell.updateCellValue(player);
-    }
-
-    return {
-        setInitialBoard,
-        getBoard,
-        printBoard,
-        markCell
-    }
-}();
-
 function Cell() {
     let value = null;
 
@@ -60,26 +20,66 @@ function Player(name, marker, victories = 0) {
     }
 }
 
-function GameController(
+const gameboard = function() {
+
+    // Set initial board
+    const setInitialBoard = (rows = 3, columns = 3) => {
+        const board = [];
+        for (let i = 0; i < rows; i++) {
+            board[i] = [];
+            for (let j = 0; j < columns; j++) {
+                board[i].push(Cell());
+            }
+        }
+        return board;
+    }
+
+    const board = setInitialBoard();
+
+    const getBoard = () => board;
+
+    const getBoardWithCellValues = (board) => {
+        const boardWithCellValues = board.map(row => row.map(cell => cell.getValue()));
+        return boardWithCellValues;
+    }
+
+    const printBoard = (board) => {
+        const boardWithCellValues = getBoardWithCellValues(board);
+        console.table(boardWithCellValues);
+    }
+
+    const markCell = (player, row, column, board) => {
+        const cell = board[row][column];
+        cell.updateCellValue(player);
+    }
+
+    return {
+        setInitialBoard,
+        getBoard,
+        getBoardWithCellValues,
+        printBoard,
+        markCell
+    }
+}();
+
+const gameController = function (
     player1 = Player("Player 1", "O"),
     player2 = Player("Player 2", "X")
 ) {
-    
     let activePlayer = player1;
-
-    const board = gameboard.setInitialBoard();
 
     const getActivePlayer = () => activePlayer;
 
     const switchPlayers = () => {
         activePlayer = activePlayer === player1 ? player2 : player1;
+        return activePlayer;
     }
 
-    const verticalWin = (column) => {
-        
+    const verticalWin = (column, boardVW) => {
         const verticalMarkers = [];
-        for (row of board.getBoard(board)) {
-            verticalMarkers.push(row[column].getValue());
+        
+        for (row of gameboard.getBoardWithCellValues(boardVW)) {
+            verticalMarkers.push(row[column]);
         }
         
         const uniqueMarkers = new Set(verticalMarkers);
@@ -87,9 +87,9 @@ function GameController(
         return uniqueMarkers.size == 1 ? true : false;
     }
 
-    const horizontalWin = (row) => {
+    const horizontalWin = (row, boardHW) => {
         const horizontalMarkers = [];
-        for (column of board.getBoard(board)[row]) {
+        for (column of boardHW[row]) {
             horizontalMarkers.push(column.getValue());
         }
 
@@ -98,16 +98,15 @@ function GameController(
         return uniqueMarkers.size == 1 ? true : false;
     }
 
-    const diagonalWin = () => {
-        const boardCopy = board.getBoard(board);
+    const diagonalWin = (boardDW) => {
         // ADD an array for each diagonal combination. There will be two arrays inside diagonalMarkers array: left-right and right-left
         const leftToRightDiagonalMarkers = [];
         const rightToLefttDiagonalMarkers = [];
 
         let columnForLeftToRight = 0;
-        let columnForRightToLeft = boardCopy[0].length - 1;
+        let columnForRightToLeft = boardDW[0].length - 1;
         // ADD cell values values to the arrays
-        for (row of boardCopy) {
+        for (row of boardDW) {
             leftToRightDiagonalMarkers.push(row[columnForLeftToRight].getValue());
             rightToLefttDiagonalMarkers.push(row[columnForRightToLeft].getValue());
             columnForLeftToRight++;
@@ -125,8 +124,8 @@ function GameController(
         return false;
     }
 
-    const win = (row, column) => {
-        if (verticalWin(column) || horizontalWin(row) || diagonalWin()) {
+    const win = (row, column, boardW) => {
+        if (verticalWin(column, boardW) || horizontalWin(row, boardW) || diagonalWin(boardW)) {
             if (activePlayer === player1) player1.victories++;
             if (activePlayer === player2) player2.victories++;
             return true;
@@ -135,11 +134,10 @@ function GameController(
         return false;
     }
 
-    const draw = (row, column) => {
-        const boardCopy = board.getBoard(board);
+    const draw = (row, column, boardD) => {
         let cells = [];
 
-        for (r of boardCopy) {
+        for (r of boardD) {
             for (c of r) {
                 cells.push(c.getValue());
             }
@@ -148,55 +146,71 @@ function GameController(
         cells = cells.flat();
         const cellsSet = new Set(cells);
 
-        if (!win(row, column) && !cellsSet.has(null)) {
+        if (!win(row, column, boardD) && !cellsSet.has(null)) {
             return true;
         }
 
         return false;
     }
 
-    let stopGame = false;
-    const playRound = (row = prompt("row"), column = prompt("column")) => {
+    let playCondition = true;
 
-        if (stopGame) return;
-        const cell = board.getBoard(board)[row][column];
+    const getplayCondition = () => playCondition;
+    const setPlayCondition = (hasCondition) => playCondition = hasCondition;
 
-        board.markCell(activePlayer, row, column, board);
-        board.printBoard(board);
+    const playRound = (
+        activePlayer,
+        row = prompt("row"), 
+        column = prompt("column"),
+        boardRound
+    ) => {
+
+        gameboard.markCell(activePlayer, row, column, boardRound);
+        gameboard.printBoard(boardRound);
         
-        if (win(row, column)) {
+        if (win(row, column, boardRound)) {
             console.log(`${activePlayer.name} has won!`);
-            switchPlayers();
-            stopGame = true;
+            activePlayer.victories++;
+            setPlayCondition(false);
         }
 
-        if (draw(row, column)) {
+        if (draw(row, column, boardRound)) {
             console.log("It's a draw!");
-            switchPlayers();
-            stopGame = true;
+            setPlayCondition(false);
         }
 
-        switchPlayers();
-
-        return stopGame;
+        return;
     }
 
     return {
         playRound,
-        getActivePlayer
+        getActivePlayer,
+        switchPlayers,
+        getplayCondition
     }
+}();
+
+function playGame(row, column) {
+    const board = gameboard.getBoard();
+    let activePlayer = gameController.getActivePlayer();
+
+    gameController.playRound(activePlayer, row, column, board);
+    gameController.switchPlayers();
+
 }
+
 
 function ScreenController() {
     const container = document.querySelector("#container");
     const cells = document.querySelectorAll(".cell");
-    const boardCells = gameboard.printBoard();
-
+    
     const showBoardCells = () => {
+        const board = gameboard.getBoard();
+        const boardWithCellValues = gameboard.getBoardWithCellValues(board);
         cells.forEach( cell => {
             const cellRowIndex = cell.parentNode.dataset.row;
             const cellColumnIndex = cell.dataset.column;
-            cell.textContent = boardCells[cellRowIndex][cellColumnIndex];
+            cell.textContent = boardWithCellValues[cellRowIndex][cellColumnIndex];
         })
     }
 
@@ -211,12 +225,11 @@ function ScreenController() {
             return;
         }
 
-        game.playRound(rowClickedIndex, columnClickedIndex);
+        if (!gameController.getplayCondition()) return;
+        playGame(rowClickedIndex, columnClickedIndex);
         showBoardCells();
         
     })
 }
 
-function game() {
-
-}
+ScreenController();
