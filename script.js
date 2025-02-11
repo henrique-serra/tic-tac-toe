@@ -62,11 +62,16 @@ const gameboard = function() {
     }
 }();
 
-const gameController = function (
-    player1 = Player("Player 1", "O"),
-    player2 = Player("Player 2", "X")
-) {
-    let activePlayer = player1;
+const gameController = function () {
+    let player1;
+    let player2;;
+    let activePlayer;
+
+    const initializePlayers = (p1Name, p1Marker, p2Name, p2Marker) => {
+        player1 = Player(p1Name, p1Marker);
+        player2 = Player(p2Name, p2Marker);
+        activePlayer = player1;
+    }
 
     const getActivePlayer = () => activePlayer;
 
@@ -184,6 +189,7 @@ const gameController = function (
 
     return {
         playRound,
+        initializePlayers,
         getActivePlayer,
         switchPlayers,
         getplayCondition
@@ -192,6 +198,7 @@ const gameController = function (
 
 function playGame(row, column) {
     const board = gameboard.getBoard();
+    gameController.initializePlayers("Player 1", "0", "Player 2", "X");
     let activePlayer = gameController.getActivePlayer();
 
     gameController.playRound(activePlayer, row, column, board);
