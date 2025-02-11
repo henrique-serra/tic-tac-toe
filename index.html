@@ -7,46 +7,22 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="player-form">
-            <h2>Novo Jogo</h2>
-            <form id="players-input">
-                <div class="form-group">
-                    <label for="player1">Jogador 1 (O):</label>
-                    <input type="text" id="player1" required>
-                </div>
-                <div class="form-group">
-                    <label for="player2">Jogador 2 (X):</label>
-                    <input type="text" id="player2" required>
-                </div>
-                <button type="submit">Começar Jogo</button>
-            </form>
+    <div id="container">
+        <div class="row" data-row="0">
+            <button class="cell" data-column="0"></button>
+            <button class="cell" data-column="1"></button>
+            <button class="cell" data-column="2"></button>
         </div>
-
-        <div id="game-status">
-            <div id="current-player"></div>
-            <div id="winner-display"></div>
+        <div class="row" data-row="1">
+            <button class="cell" data-column="0"></button>
+            <button class="cell" data-column="1"></button>
+            <button class="cell" data-column="2"></button>
         </div>
-
-        <div id="container" class="hidden">
-            <div class="row" data-row="0">
-                <button class="cell" data-column="0"></button>
-                <button class="cell" data-column="1"></button>
-                <button class="cell" data-column="2"></button>
-            </div>
-            <div class="row" data-row="1">
-                <button class="cell" data-column="0"></button>
-                <button class="cell" data-column="1"></button>
-                <button class="cell" data-column="2"></button>
-            </div>
-            <div class="row" data-row="2">
-                <button class="cell" data-column="0"></button>
-                <button class="cell" data-column="1"></button>
-                <button class="cell" data-column="2"></button>
-            </div>
+        <div class="row" data-row="2">
+            <button class="cell" data-column="0"></button>
+            <button class="cell" data-column="1"></button>
+            <button class="cell" data-column="2"></button>
         </div>
-
-        <button id="new-game" class="hidden">Novo Jogo</button>
     </div>
     <script src="./script.js"></script>
 </body>

@@ -62,24 +62,18 @@ const gameboard = function() {
     }
 }();
 
-const gameController = function () {
-    let player1 = null;
-    let player2 = null;
-    let activePlayer = null;
-    let playCondition = true;
-
-    const initializePlayers = (p1, p2) => {
-        player1 = p1;
-        player2 = p2;
-        activePlayer = player1;
-    };
+const gameController = function (
+    player1 = Player("Player 1", "O"),
+    player2 = Player("Player 2", "X")
+) {
+    let activePlayer = player1;
 
     const getActivePlayer = () => activePlayer;
 
     const switchPlayers = () => {
         activePlayer = activePlayer === player1 ? player2 : player1;
         return activePlayer;
-    };
+    }
 
     const verticalWin = (column, boardVW) => {
         const verticalMarkers = [];
@@ -90,8 +84,8 @@ const gameController = function () {
         
         const uniqueMarkers = new Set(verticalMarkers);
        
-        return uniqueMarkers.size == 1 && !uniqueMarkers.has(null);
-    };
+        return uniqueMarkers.size == 1 ? true : false;
+    }
 
     const horizontalWin = (row, boardHW) => {
         const horizontalMarkers = [];
@@ -101,16 +95,17 @@ const gameController = function () {
 
         const uniqueMarkers = new Set(horizontalMarkers);
 
-        return uniqueMarkers.size == 1 && !uniqueMarkers.has(null);
-    };
+        return uniqueMarkers.size == 1 ? true : false;
+    }
 
     const diagonalWin = (boardDW) => {
+        // ADD an array for each diagonal combination. There will be two arrays inside diagonalMarkers array: left-right and right-left
         const leftToRightDiagonalMarkers = [];
         const rightToLefttDiagonalMarkers = [];
 
         let columnForLeftToRight = 0;
         let columnForRightToLeft = boardDW[0].length - 1;
-        
+        // ADD cell values values to the arrays
         for (row of boardDW) {
             leftToRightDiagonalMarkers.push(row[columnForLeftToRight].getValue());
             rightToLefttDiagonalMarkers.push(row[columnForRightToLeft].getValue());
@@ -118,14 +113,16 @@ const gameController = function () {
             columnForRightToLeft--;
         }
 
+        // CONVERT to set each array
         const uniqueMarkersLefToRight = new Set(leftToRightDiagonalMarkers);
         const uniqueMarkersRightToLeft = new Set(rightToLefttDiagonalMarkers);
 
+        // IF any of the inner array has only one kind of marker, then win
         if (uniqueMarkersLefToRight.size == 1 && !uniqueMarkersLefToRight.has(null)) return true;
         if (uniqueMarkersRightToLeft.size == 1 && !uniqueMarkersRightToLeft.has(null)) return true;
         
         return false;
-    };
+    }
 
     const win = (row, column, boardW) => {
         if (verticalWin(column, boardW) || horizontalWin(row, boardW) || diagonalWin(boardW)) {
@@ -135,7 +132,7 @@ const gameController = function () {
         }
 
         return false;
-    };
+    }
 
     const draw = (row, column, boardD) => {
         let cells = [];
@@ -154,17 +151,19 @@ const gameController = function () {
         }
 
         return false;
-    };
+    }
+
+    let playCondition = true;
 
     const getplayCondition = () => playCondition;
     const setPlayCondition = (hasCondition) => playCondition = hasCondition;
-    const resetPlayCondition = () => playCondition = true;
 
-    const playRound = (row, column, boardRound) => {
-        if (!activePlayer) {
-            console.error("Players not initialized! Call initializePlayers first.");
-            return;
-        }
+    const playRound = (
+        activePlayer,
+        row = prompt("row"), 
+        column = prompt("column"),
+        boardRound
+    ) => {
 
         gameboard.markCell(activePlayer, row, column, boardRound);
         gameboard.printBoard(boardRound);
@@ -179,135 +178,58 @@ const gameController = function () {
             console.log("It's a draw!");
             setPlayCondition(false);
         }
-    };
+
+        return;
+    }
 
     return {
-        initializePlayers,
         playRound,
         getActivePlayer,
         switchPlayers,
-        getplayCondition,
-        resetPlayCondition
-    };
+        getplayCondition
+    }
 }();
 
 function playGame(row, column) {
     const board = gameboard.getBoard();
-    gameController.playRound(row, column, board);
+    let activePlayer = gameController.getActivePlayer();
+
+    gameController.playRound(activePlayer, row, column, board);
     gameController.switchPlayers();
 
 }
 
+
 function ScreenController() {
     const container = document.querySelector("#container");
     const cells = document.querySelectorAll(".cell");
-    const playerForm = document.querySelector("#players-input");
-    const currentPlayerDisplay = document.querySelector("#current-player");
-    const winnerDisplay = document.querySelector("#winner-display");
-    const newGameButton = document.querySelector("#new-game");
     
     const showBoardCells = () => {
         const board = gameboard.getBoard();
         const boardWithCellValues = gameboard.getBoardWithCellValues(board);
-        cells.forEach(cell => {
+        cells.forEach( cell => {
             const cellRowIndex = cell.parentNode.dataset.row;
             const cellColumnIndex = cell.dataset.column;
             cell.textContent = boardWithCellValues[cellRowIndex][cellColumnIndex];
-        });
-    };
-
-    const updateCurrentPlayer = () => {
-        const activePlayer = gameController.getActivePlayer();
-        currentPlayerDisplay.textContent = `Vez de: ${activePlayer.name} (${activePlayer.marker})`;
-    };
-
-    const showWinner = (playerName) => {
-        winnerDisplay.textContent = `${playerName} venceu!`;
-        newGameButton.classList.remove('hidden');
-    };
-
-    const showDraw = () => {
-        winnerDisplay.textContent = "Empate!";
-        newGameButton.classList.remove('hidden');
-    };
-
-    const startGame = (event) => {
-        event.preventDefault();
-        
-        const player1Name = document.querySelector("#player1").value;
-        const player2Name = document.querySelector("#player2").value;
-        
-        // Inicializa os jogadores
-        const player1 = Player(player1Name, "O");
-        const player2 = Player(player2Name, "X");
-        gameController.initializePlayers(player1, player2);
-        
-        // Esconde o formulário e mostra o tabuleiro
-        playerForm.parentElement.classList.add('hidden');
-        container.classList.remove('hidden');
-        
-        // Atualiza o display do jogador atual
-        updateCurrentPlayer();
-    };
-
-    const resetGame = () => {
-        // Reseta o estado interno do tabuleiro
-        gameboard.resetBoard();
-        
-        // Reseta a condição do jogo
-        gameController.resetPlayCondition();
-        
-        // Limpa o tabuleiro visualmente
-        cells.forEach(cell => {
-            cell.textContent = '';
-            cell.disabled = false;
-        });
-        
-        // Reseta os displays
-        winnerDisplay.textContent = '';
-        currentPlayerDisplay.textContent = '';
-        
-        // Esconde o botão de novo jogo
-        newGameButton.classList.add('hidden');
-        
-        // Mostra o formulário e esconde o tabuleiro
-        playerForm.parentElement.classList.remove('hidden');
-        container.classList.add('hidden');
-        
-        // Limpa o formulário
-        playerForm.reset();
-    };
+        })
+    }
 
     container.addEventListener("click", e => {
-        if (!gameController.getplayCondition()) return;
-        
         const rowClickedIndex = e.target.parentNode.dataset.row;
+        const rowClicked = document.querySelector(`[data-row="${rowClickedIndex}"]`);
         const columnClickedIndex = e.target.dataset.column;
-        const cellClicked = e.target;
+        const cellClicked = rowClicked.querySelector(`[data-column="${columnClickedIndex}"]`);
 
         if (cellClicked.textContent) {
-            alert("Célula ocupada! Escolha outra!");
+            alert("Cell taken! Choose another!");
             return;
         }
 
+        if (!gameController.getplayCondition()) return;
         playGame(rowClickedIndex, columnClickedIndex);
         showBoardCells();
         
-        if (!gameController.getplayCondition()) {
-            const activePlayer = gameController.getActivePlayer();
-            if (cellClicked.textContent) {
-                showWinner(activePlayer.name);
-            } else {
-                showDraw();
-            }
-            cells.forEach(cell => cell.disabled = true);
-        } else {
-            updateCurrentPlayer();
-        }
-    });
-
-    playerForm.addEventListener("submit", startGame);
-    newGameButton.addEventListener("click", resetGame);
+    })
 }
 
 ScreenController();
