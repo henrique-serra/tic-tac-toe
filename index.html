@@ -20,13 +20,18 @@
                     <label for="player2">Jogador 2 (X):</label>
                     <input type="text" id="player2" required>
                 </div>
-                <button type="submit">Começar Jogo</button>
+                <button id="start-game" type="submit">Começar Jogo</button>
             </form>
         </div>
 
         <div id="game-status">
             <div id="current-player"></div>
             <div id="winner-display"></div>
+            <div id="game-score" class="hidden">
+                <h4>Score</h4>
+                <p id="player1-score" class="player-score"></p>
+                <p id="player2-score" class="player-score"></p>
+            </div>
         </div>
 
         <div id="container">
@@ -47,7 +52,10 @@
             </div>
         </div>
 
-        <button id="new-game">Novo Jogo</button>
+        <div id="buttons-div" class="hidden">
+            <button id="new-game">Novo Jogo</button>
+            <button id="new-round" >Nova Rodada</button>
+        </div>
     </div>
     <script src="./script.js"></script>
 </body>

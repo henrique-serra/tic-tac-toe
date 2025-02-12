@@ -64,12 +64,20 @@ const gameController = function () {
     let player1;
     let player2;;
     let activePlayer;
+    let playCondition = false;
 
-    const initializePlayers = (p1Name, p1Marker, p2Name, p2Marker) => {
-        player1 = Player(p1Name, p1Marker);
-        player2 = Player(p2Name, p2Marker);
+    const initializePlayers = (p1Name, p2Name) => {
+        player1 = Player(p1Name, "O");
+        player2 = Player(p2Name, "X");
         activePlayer = player1;
+        playCondition = true;
     }
+
+    const getPlayer = (player) => {
+        if (player == "1") return player1;
+        if (player == "2") return player2;
+        return;
+    };
 
     const getActivePlayer = () => activePlayer;
 
@@ -133,11 +141,7 @@ const gameController = function () {
     }
 
     const win = (row, column, boardW = gameboard.getBoard()) => {
-        if (verticalWin(column, boardW) || horizontalWin(row, boardW) || diagonalWin(boardW)) {
-            if (activePlayer === player1) player1.victories++;
-            if (activePlayer === player2) player2.victories++;
-            return true;
-        }
+        if (verticalWin(column, boardW) || horizontalWin(row, boardW) || diagonalWin(boardW)) return true;
 
         return false;
     }
@@ -154,14 +158,10 @@ const gameController = function () {
         cells = cells.flat();
         const cellsSet = new Set(cells);
 
-        if (!win(row, column, boardD) && !cellsSet.has(null)) {
-            return true;
-        }
+        if (!win(row, column, boardD) && !cellsSet.has(null)) return true;
 
         return false;
     }
-
-    let playCondition = true;
 
     const getplayCondition = () => playCondition;
     const setPlayCondition = (hasCondition) => playCondition = hasCondition;
@@ -176,7 +176,7 @@ const gameController = function () {
         
         if (win(row, column)) {
             console.log(`${activePlayer.name} has won!`);
-            activePlayer.victories++;
+            addVictoryToActivePlayer();
             setPlayCondition(false);
         }
 
@@ -190,24 +190,45 @@ const gameController = function () {
 
     return {
         playRound,
+        getPlayer,
         initializePlayers,
         getActivePlayer,
         switchPlayers,
         addVictoryToActivePlayer,
-        getplayCondition
+        getplayCondition,
+        win,
+        draw,
+        setPlayCondition,
     }
 }();
-
-// Set these to a button
-// function initializeGame() {
-//     gameboard.setInitialBoard();
-//     gameController.initializePlayers("Player 1", "0", "Player 2", "X");
-// }
 
 
 function ScreenController() {
     const container = document.querySelector("#container");
+    const player1Input = document.querySelector("#player1");
+    const player2Input = document.querySelector("#player2");
+    const starGameBtn = document.querySelector("#start-game");
     const cells = document.querySelectorAll(".cell");
+    const gameStatusDiv = document.querySelector("#game-status");
+    const currentPlayerDiv = document.querySelector("#current-player");
+    const winnerDisplayDiv = document.querySelector("#winner-display");
+    const gameScoreDiv = document.querySelector("#game-score");
+    const player1ScoreP = document.querySelector("#player1-score");
+    const player2ScoreP = document.querySelector("#player2-score");
+    const playerForm = document.querySelector("#player-form");
+    const buttonsDiv = document.querySelector("#buttons-div");
+    const newGame = document.querySelector("#new-game");
+    const newRound = document.querySelector("#new-round");
+
+    const updateScoreOnScreen = () => {
+        
+        if (gameScoreDiv.classList.contains("hidden")) gameScoreDiv.classList.remove("hidden");
+        const player1 = gameController.getPlayer("1");
+        const player2 = gameController.getPlayer("2");
+
+        player1ScoreP.textContent = `${player1.name} (O): ${player1.victories}`;
+        player2ScoreP.textContent = `${player2.name} (X): ${player2.victories}`;
+    }
     
     const showBoardCells = () => {
         const board = gameboard.getBoard();
@@ -218,6 +239,27 @@ function ScreenController() {
             cell.textContent = boardWithCellValues[cellRowIndex][cellColumnIndex];
         })
     }
+
+    starGameBtn.addEventListener("click", e => {
+        e.preventDefault();
+        const player1Name = player1Input.value;
+        const player2Name = player2Input.value;
+
+        if (!player1Name || !player2Name) {
+            alert("Enter the name of the players!");
+            return;
+        }
+
+        playerForm.classList.add("hidden");
+        buttonsDiv.classList.remove("hidden");
+
+        gameController.initializePlayers(player1Name, player2Name);
+        gameboard.setInitialBoard();
+        showBoardCells();
+        winnerDisplayDiv.textContent = "";
+        currentPlayerDiv.textContent = `${player1Name}'s turn (O)`;
+        updateScoreOnScreen();
+    })
 
     container.addEventListener("click", e => {
         const rowClickedIndex = e.target.parentNode.dataset.row;
@@ -231,10 +273,48 @@ function ScreenController() {
         }
 
         if (!gameController.getplayCondition()) return;
-        playGame(rowClickedIndex, columnClickedIndex);
+        
+        gameController.playRound(rowClickedIndex, columnClickedIndex);
+        if (gameController.win(rowClickedIndex, columnClickedIndex)) {
+            const roundWinner = gameController.getActivePlayer();
+
+            winnerDisplayDiv.textContent = `${roundWinner.name} (${roundWinner.marker}) has won!`;
+            currentPlayerDiv.textContent = "";
+        } else {
+            gameController.switchPlayers();
+            currentPlayerDiv.textContent = `${gameController.getActivePlayer().name}'s turn (${gameController.getActivePlayer().marker})`;
+        }
+
+        updateScoreOnScreen();
         showBoardCells();
         
-    })
+    });
+
+    newGame.addEventListener("click", e => {
+        buttonsDiv.classList.add("hidden");
+        playerForm.classList.remove("hidden");
+        
+        if (!gameScoreDiv.classList.contains("hidden")) gameScoreDiv.classList.add("hidden");
+
+        gameController.initializePlayers("", "");
+        gameboard.setInitialBoard();
+        showBoardCells();
+        winnerDisplayDiv.textContent = "";
+        currentPlayerDiv.textContent = "";
+        player1Input.value = "";
+        player2Input.value = "";
+    });
+
+    newRound.addEventListener("click", e => {
+        if (gameController.getActivePlayer().marker == "X") gameController.switchPlayers();
+        
+        gameController.setPlayCondition(true);
+        gameboard.setInitialBoard();
+        updateScoreOnScreen();
+        showBoardCells();
+        winnerDisplayDiv.textContent = "";
+        currentPlayerDiv.textContent = `${player1Input.value}'s turn (O)`;
+    });
 }
 
 ScreenController();
