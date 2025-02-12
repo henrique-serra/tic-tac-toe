@@ -167,3 +167,19 @@ button:hover {
 .player-score {
   text-align: end;
 }
+
+.cell[data-column="0"] {
+  border-left: none;
+}
+
+.cell[data-column="2"] {
+  border-right: none;
+}
+
+[data-row="0"] .cell {
+  border-top: none;
+}
+
+[data-row="2"] .cell {
+  border-bottom: none;
+}
