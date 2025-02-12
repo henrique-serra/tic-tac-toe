@@ -280,6 +280,8 @@ function ScreenController() {
 
             winnerDisplayDiv.textContent = `${roundWinner.name} (${roundWinner.marker}) has won!`;
             currentPlayerDiv.textContent = "";
+        } else if (gameController.draw(rowClickedIndex, columnClickedIndex)) {
+            winnerDisplayDiv.textContent = "It's a draw!";
         } else {
             gameController.switchPlayers();
             currentPlayerDiv.textContent = `${gameController.getActivePlayer().name}'s turn (${gameController.getActivePlayer().marker})`;
@@ -298,6 +300,7 @@ function ScreenController() {
 
         gameController.initializePlayers("", "");
         gameboard.setInitialBoard();
+        gameController.setPlayCondition(false);
         showBoardCells();
         winnerDisplayDiv.textContent = "";
         currentPlayerDiv.textContent = "";
