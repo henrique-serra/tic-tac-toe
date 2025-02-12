@@ -21,10 +21,10 @@ function Player(name, marker, victories = 0) {
 }
 
 const gameboard = function() {
+    const board = [];
 
     // Set initial board
     const setInitialBoard = (rows = 3, columns = 3) => {
-        const board = [];
         for (let i = 0; i < rows; i++) {
             board[i] = [];
             for (let j = 0; j < columns; j++) {
@@ -34,21 +34,19 @@ const gameboard = function() {
         return board;
     }
 
-    const board = setInitialBoard();
-
     const getBoard = () => board;
 
-    const getBoardWithCellValues = (board) => {
+    const getBoardWithCellValues = () => {
         const boardWithCellValues = board.map(row => row.map(cell => cell.getValue()));
         return boardWithCellValues;
     }
 
-    const printBoard = (board) => {
-        const boardWithCellValues = getBoardWithCellValues(board);
+    const printBoard = () => {
+        const boardWithCellValues = getBoardWithCellValues();
         console.table(boardWithCellValues);
     }
 
-    const markCell = (player, row, column, board) => {
+    const markCell = (player, row, column) => {
         const cell = board[row][column];
         cell.updateCellValue(player);
     }
@@ -80,11 +78,16 @@ const gameController = function () {
         return activePlayer;
     }
 
+    const addVictoryToActivePlayer = () => {
+        if (activePlayer === player1) player1.victories++;
+        if (activePlayer === player2) player2.victories++;
+    }
+
     const verticalWin = (column, boardVW) => {
         const verticalMarkers = [];
         
-        for (row of gameboard.getBoardWithCellValues(boardVW)) {
-            verticalMarkers.push(row[column]);
+        for (row of boardVW) {
+            verticalMarkers.push(row[column].getValue());
         }
         
         const uniqueMarkers = new Set(verticalMarkers);
@@ -129,7 +132,7 @@ const gameController = function () {
         return false;
     }
 
-    const win = (row, column, boardW) => {
+    const win = (row, column, boardW = gameboard.getBoard()) => {
         if (verticalWin(column, boardW) || horizontalWin(row, boardW) || diagonalWin(boardW)) {
             if (activePlayer === player1) player1.victories++;
             if (activePlayer === player2) player2.victories++;
@@ -139,7 +142,7 @@ const gameController = function () {
         return false;
     }
 
-    const draw = (row, column, boardD) => {
+    const draw = (row, column, boardD = gameboard.getBoard()) => {
         let cells = [];
 
         for (r of boardD) {
@@ -164,22 +167,20 @@ const gameController = function () {
     const setPlayCondition = (hasCondition) => playCondition = hasCondition;
 
     const playRound = (
-        activePlayer,
         row = prompt("row"), 
-        column = prompt("column"),
-        boardRound
+        column = prompt("column")
     ) => {
 
-        gameboard.markCell(activePlayer, row, column, boardRound);
-        gameboard.printBoard(boardRound);
+        gameboard.markCell(activePlayer, row, column);
+        gameboard.printBoard();
         
-        if (win(row, column, boardRound)) {
+        if (win(row, column)) {
             console.log(`${activePlayer.name} has won!`);
             activePlayer.victories++;
             setPlayCondition(false);
         }
 
-        if (draw(row, column, boardRound)) {
+        if (draw(row, column)) {
             console.log("It's a draw!");
             setPlayCondition(false);
         }
@@ -192,19 +193,16 @@ const gameController = function () {
         initializePlayers,
         getActivePlayer,
         switchPlayers,
+        addVictoryToActivePlayer,
         getplayCondition
     }
 }();
 
-function playGame(row, column) {
-    const board = gameboard.getBoard();
-    gameController.initializePlayers("Player 1", "0", "Player 2", "X");
-    let activePlayer = gameController.getActivePlayer();
-
-    gameController.playRound(activePlayer, row, column, board);
-    gameController.switchPlayers();
-
-}
+// Set these to a button
+// function initializeGame() {
+//     gameboard.setInitialBoard();
+//     gameController.initializePlayers("Player 1", "0", "Player 2", "X");
+// }
 
 
 function ScreenController() {
